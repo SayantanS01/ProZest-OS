@@ -1,18 +1,46 @@
-# Original OS
+# ProZest OS
 
-An open-source operating system developed from scratch.
+ProZest OS is an original, open-source,
+Unix-like operating system developed
+from scratch.
 
 ## Architecture
 x86-64
 
 ## Kernel
-Original monolithic kernel written in C and assembly.
+Original monolithic kernel written
+primarily in C and Assembly.
 
-## Boot
-UEFI with Limine bootloader initially.
+## Boot Protocol
+Limine, with UEFI firmware support.
 
-## Development
-Ubuntu Linux host with QEMU/KVM testing.
+## Development Environment
+Ubuntu Linux with QEMU/KVM.
 
-## Project Status
-Milestone M02 - Development workspace setup.
+## Current Capabilities
+- Original freestanding x86-64 kernel
+- Higher-half kernel ELF
+- UEFI boot through Limine
+- Framebuffer initialization
+- Four-color graphical test pattern
+- Experimental bitmap font module
+
+## Current Version
+v0.0.1 - First Boot
+
+## Development Goal
+Build a complete, independent Unix-like
+operating system featuring:
+
+- Memory management
+- Interrupt handling
+- Multitasking
+- Process scheduling
+- System calls
+- Filesystems
+- Device drivers
+- Networking
+- Terminal and shell
+- Graphical desktop
+- Software installation
+- Security and user management

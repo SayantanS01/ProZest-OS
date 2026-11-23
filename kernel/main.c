@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <limine.h>
+#include "graphics.h"
 
 /* Limine protocol markers and requests. */
 
@@ -144,6 +145,18 @@ void kernel_main(void)
     boot_stage = 3;
 
     draw_test_pattern(fb);
+
+    /* Draw white text using our bitmap renderer. */
+    uint32_t white = graphics_rgb(fb, 255, 255, 255);
+
+    graphics_draw_string(
+        fb,
+        "PROZEST OS",
+        100,
+        100,
+        white,
+        8
+    );
 
     boot_stage = 4;
 
