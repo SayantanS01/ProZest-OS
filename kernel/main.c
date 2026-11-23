@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <limine.h>
 #include "graphics.h"
+#include "console.h"
 
 /* Limine protocol markers and requests. */
 
@@ -146,17 +147,19 @@ void kernel_main(void)
 
     draw_test_pattern(fb);
 
-    /* Draw white text using our bitmap renderer. */
+    /* Initialize our first graphical kernel console. */
     uint32_t white = graphics_rgb(fb, 255, 255, 255);
 
-    graphics_draw_string(
-        fb,
-        "PROZEST OS",
-        100,
-        100,
-        white,
-        8
-    );
+    console_init(fb, white, 3);
+
+    console_write("PROZEST OS\n");
+    console_write("KERNEL VERSION 0004\n");
+    console_write("FRAMEBUFFER READY\n");
+    console_write("CONSOLE READY\n");
+    console_write("0123456789\n");
+    console_write("ABCDEFGHIJKLMNOPQRSTUVWXYZ\n");
+    console_write("abcdefghijklmnopqrstuvwxyz\n");
+    console_write("[OK] ASCII: !@#$%^&*()-_=+\n");
 
     boot_stage = 4;
 
