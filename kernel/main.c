@@ -8,6 +8,7 @@
 #include <limine.h>
 #include "graphics.h"
 #include "console.h"
+#include "logger.h"
 
 /* Limine protocol markers and requests. */
 
@@ -154,24 +155,25 @@ void kernel_main(void)
 
     console_init(fb, white, 3, black);
 
-    console_write("PROZEST OS\n");
-    console_write("KERNEL VERSION 0004\n");
-    console_write("FRAMEBUFFER READY\n");
-    console_write("CONSOLE READY\n");
-    console_write("0123456789\n");
-    console_write("ABCDEFGHIJKLMNOPQRSTUVWXYZ\n");
-    console_write("abcdefghijklmnopqrstuvwxyz\n");
-    console_write("[OK] ASCII: !@#$%^&*()-_=+\n");
+    console_write("PROZEST OS v0.0.6\n");
+    console_write("=================\n");
+    console_newline();
 
-    /*
-     * Scroll stress test:
-     * print enough lines to exceed the screen height.
-     */
-    for (uint32_t i = 0; i < 40; i++) {
-        console_write("SCROLL TEST LINE\n");
-    }
+    log_write(LOG_INFO, "Kernel initialization started");
+    log_write(LOG_OK, "Framebuffer available");
+    log_write(LOG_OK, "Graphical console initialized");
+    log_write(LOG_OK, "ASCII bitmap font available");
+    log_write(LOG_DEBUG, "Logger subsystem active");
 
-    console_write("SCROLL COMPLETE\n");
+    console_newline();
+
+    log_write(LOG_WARN, "TEST ONLY - example warning");
+    log_write(LOG_ERROR, "TEST ONLY - example error");
+
+    console_newline();
+
+    log_write(LOG_INFO, "ProZest OS kernel ready");
+
 
     boot_stage = 4;
 
