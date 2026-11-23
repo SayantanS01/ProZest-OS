@@ -1,0 +1,16 @@
+# Compiled artifacts
+build/
+dist/
+
+# Object and binary files
+*.o
+*.elf
+*.bin
+*.iso
+
+# Editor files
+.vscode/
+*.swp
+
+# External dependencies (managed separately)
+external/
