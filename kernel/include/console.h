@@ -13,7 +13,8 @@
 void console_init(
     struct limine_framebuffer *framebuffer,
     uint32_t foreground,
-    uint32_t scale
+    uint32_t scale,
+    uint32_t background
 );
 
 /* Write a null-terminated string to the console. */

@@ -111,3 +111,57 @@ void graphics_draw_string(
         text++;
     }
 }
+
+/*
+ * Scroll the 32-bit framebuffer upward.
+ *
+ * Move existing pixel rows upward and clear
+ * the exposed bottom rows.
+ */
+void graphics_scroll_up(
+    struct limine_framebuffer *fb,
+    uint64_t pixel_rows,
+    uint32_t background
+)
+{
+    if (fb == NULL || fb->address == NULL ||
+        fb->bpp != 32 || fb->width > UINT64_MAX / 4 ||
+        fb->pitch < fb->width * 4) {
+        return;
+    }
+
+    if (pixel_rows == 0) {
+        return;
+    }
+
+    if (pixel_rows > fb->height) {
+        pixel_rows = fb->height;
+    }
+
+    /* Copy surviving rows upward. */
+    for (uint64_t y = 0; y < fb->height - pixel_rows; y++) {
+        for (uint64_t x = 0; x < fb->width; x++) {
+            volatile uint32_t *destination =
+                (volatile uint32_t *)(
+                    (uintptr_t)fb->address +
+                    y * fb->pitch + x * 4
+                );
+
+            volatile uint32_t *source =
+                (volatile uint32_t *)(
+                    (uintptr_t)fb->address +
+                    (y + pixel_rows) * fb->pitch + x * 4
+                );
+
+            *destination = *source;
+        }
+    }
+
+    /* Clear the newly exposed bottom region. */
+    for (uint64_t y = fb->height - pixel_rows;
+         y < fb->height; y++) {
+        for (uint64_t x = 0; x < fb->width; x++) {
+            graphics_put_pixel(fb, x, y, background);
+        }
+    }
+}

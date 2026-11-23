@@ -150,7 +150,9 @@ void kernel_main(void)
     /* Initialize our first graphical kernel console. */
     uint32_t white = graphics_rgb(fb, 255, 255, 255);
 
-    console_init(fb, white, 3);
+    uint32_t black = graphics_rgb(fb, 0, 0, 0);
+
+    console_init(fb, white, 3, black);
 
     console_write("PROZEST OS\n");
     console_write("KERNEL VERSION 0004\n");
@@ -160,6 +162,16 @@ void kernel_main(void)
     console_write("ABCDEFGHIJKLMNOPQRSTUVWXYZ\n");
     console_write("abcdefghijklmnopqrstuvwxyz\n");
     console_write("[OK] ASCII: !@#$%^&*()-_=+\n");
+
+    /*
+     * Scroll stress test:
+     * print enough lines to exceed the screen height.
+     */
+    for (uint32_t i = 0; i < 40; i++) {
+        console_write("SCROLL TEST LINE\n");
+    }
+
+    console_write("SCROLL COMPLETE\n");
 
     boot_stage = 4;
 

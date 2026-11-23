@@ -27,4 +27,12 @@ void graphics_draw_string(
     uint32_t scale
 );
 
+
+/* Move framebuffer pixels upward and clear the bottom area. */
+void graphics_scroll_up(
+    struct limine_framebuffer *fb,
+    uint64_t pixel_rows,
+    uint32_t background
+);
+
 #endif

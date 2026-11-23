@@ -16,6 +16,7 @@ static uint64_t line_height = 0;
 
 static uint32_t text_color = 0;
 static uint32_t text_scale = 1;
+static uint32_t background_color = 0;
 
 /*
  * Initialize the graphical console.
@@ -23,7 +24,8 @@ static uint32_t text_scale = 1;
 void console_init(
     struct limine_framebuffer *framebuffer,
     uint32_t foreground,
-    uint32_t scale
+    uint32_t scale,
+    uint32_t background
 )
 {
     console_fb = NULL;
@@ -46,6 +48,7 @@ void console_init(
     line_height = height;
     text_color = foreground;
     text_scale = scale;
+    background_color = background;
 
     console_fb = framebuffer;
 }
@@ -64,23 +67,27 @@ void console_newline(void)
     cursor_x = 0;
 
     /*
-     * We already validated that one text row
-     * fits inside the framebuffer.
-     *
-     * Advance if there is space for another row.
+     * If another complete text row fits,
+     * advance the cursor normally.
      */
-    if (cursor_y < console_fb->height &&
-        line_height <= console_fb->height - cursor_y &&
+    if (cursor_y <= console_fb->height - line_height &&
         line_height <=
-            (console_fb->height - cursor_y) - line_height) {
+            console_fb->height - line_height - cursor_y) {
         cursor_y += line_height;
-    } else {
-        /*
-         * No more complete lines fit.
-         * Scrolling will be implemented later.
-         */
-        cursor_y = console_fb->height;
+        return;
     }
+
+    /*
+     * Otherwise, move the existing screen
+     * contents upward by one text row.
+     *
+     * Keep cursor_y at the last usable line.
+     */
+    graphics_scroll_up(
+        console_fb,
+        line_height,
+        background_color
+    );
 }
 
 /*
