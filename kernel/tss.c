@@ -2,6 +2,9 @@
 #include <stdint.h>
 
 #include "tss.h"
+#ifdef PROZEST_IST4_TEST
+#include "profile.h"
+#endif
 
 /*
  * Dedicated exception stacks for the bootstrap CPU.
@@ -78,5 +81,8 @@ void tss_prepare_bootstrap(struct tss64 *tss)
      * The future TSS descriptor limit will
      * be sizeof(struct tss64) - 1.
      */
+#ifdef PROZEST_IST4_TEST
+    tss->ist[3] = ist4_top();
+#endif
     tss->iomap_base = (uint16_t)sizeof(*tss);
 }

@@ -65,7 +65,7 @@ CFLAGS=(
 )
 
 SOURCES=(
-    build/m09-validation/main_m09_validation.c
+    experiments/m09-validation/main_m09_validation.c
     kernel/graphics.c
     kernel/font.c
     kernel/console.c
@@ -131,7 +131,7 @@ echo "[3/4] Staging UEFI boot files"
 cp "$KERNEL" \
    "$STAGE/boot/kernel.elf"
 
-cp "$BUILD/limine.conf" \
+cp experiments/m09-validation/limine.conf \
    "$STAGE/boot/limine/limine.conf"
 
 cp "$LIMINE/limine-uefi-cd.bin" \

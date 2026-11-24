@@ -5,6 +5,11 @@
 #include "console.h"
 #include "logger.h"
 
+#ifdef PROZEST_QEMU_DEBUGCON
+#include "exception_emergency.h"
+#endif
+
+
 /*
  * Convert supported CPU exception vectors
  * to human-readable names.
@@ -134,6 +139,17 @@ void exception_dispatch(
     uint64_t error_code
 )
 {
+#ifdef PROZEST_QEMU_DEBUGCON
+    /*
+     * Report the exception before touching
+     * the graphical console.
+     */
+    exception_emergency_report(
+        vector,
+        error_code
+    );
+#endif
+
     char hex[EXCEPTION_HEX_BUFFER_SIZE];
 
     console_newline();

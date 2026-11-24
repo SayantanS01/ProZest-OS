@@ -1,0 +1,81 @@
+"""Audit the preparation-only ELF and keep the inspected binary listings."""
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+elf = Path(sys.argv[1])
+
+
+def listing(filename, *command):
+    output = subprocess.check_output([*command, elf], text=True)
+    (elf.parent / filename).write_text(output)
+    return output
+
+
+def require(ok, reason):
+    if not ok:
+        raise SystemExit("ELF audit failed: " + reason)
+
+
+headers = listing("elf-layout.txt", "readelf", "-h", "-lW")
+require("ELF64" in headers and "Advanced Micro Devices X86-64" in headers
+        and re.search(r"Entry point address:\s+0xffffffff80001000", headers),
+        "unexpected architecture or entry")
+loads = []
+for line in headers.splitlines():
+    fields = line.split()
+    if fields and fields[0] == "LOAD":
+        start = int(fields[2], 16)
+        limit = start + int(fields[5], 16)
+        loads.append((start, limit, "".join(fields[6:-1])))
+require(len(loads) == 3 and loads[0][0] == 0xffffffff80000000
+        and [p[2] for p in loads] == ["RW", "RE", "RW"], "unexpected load segments")
+
+symbols = {}
+for line in listing("symbols.txt", "nm", "-nS").splitlines():
+    fields = line.split()
+    if len(fields) == 4:
+        addr, size, kind, name = fields
+        symbols[name] = (int(addr, 16), int(size, 16), kind)
+require(not subprocess.check_output(["nm", "-u", elf]).strip(), "undefined symbol(s)")
+
+
+def check_symbol(name, flags, size=None, alignment=1):
+    require(name in symbols, f"missing symbol {name}")
+    addr, length, _ = symbols[name]
+    require(length > 0 and (size is None or length == size) and addr % alignment == 0
+            and any(mode == flags and lo <= addr and addr + length <= hi
+                    for lo, hi, mode in loads), f"bad size, location or alignment of {name}")
+
+
+for vector in range(32):
+    check_symbol(f"transition_fatal_{vector}", "RE")
+    check_symbol(f"exception_stub_{vector}", "RE")
+for name in ("double_fault_stack", "nmi_stack", "machine_check_stack"):
+    check_symbol(name, "RW", size=16384, alignment=16)
+for name in ("bootstrap_storage", "bootstrap_idt_storage", "transition_storage"):
+    check_symbol(name, "RW", alignment=16)
+for name in ("kernel_main", "cpu_state_capture", "transition_checkpoint_halt"):
+    check_symbol(name, "RE")
+require(symbols["kernel_main"][0] == 0xffffffff80001000, "entry symbol misplaced")
+instructions = listing("kernel.asm", "objdump", "-d", "--no-show-raw-insn")
+forbidden = re.search(r"^\s*[0-9a-f]+:\s+(sti)\b", instructions, re.M)
+require(forbidden is None, "forbidden instruction present")
+for instruction in ("sgdt", "sidt", "str", "rdmsr", "hlt"):
+    require(re.search(rf"^\s*[0-9a-f]+:\s+{instruction}\w*\b", instructions, re.M),
+            f"expected {instruction} instruction missing")
+ops = re.findall(r"^\s*[0-9a-f]+:\s+(lidt|lgdt|ltr|lretq)\b", instructions, re.M)
+require(ops == ["lidt", "lgdt", "lretq", "lidt", "lgdt", "ltr", "lidt"], "activation order")
+raw = subprocess.check_output(["objdump", "-d", elf], text=True)
+require(re.search(r"<ud_fault_site>:\n\s*[a-f0-9]+:\s+0f 0b\s+ud2", raw), "wrong UD2 site")
+require(len(re.findall(r":\s+ud2\b", instructions)) == 1, "unexpected additional UD2")
+stub = instructions.split("<exception_stub_6>:", 1)[1].split("\n\n", 1)[0]
+require(re.search(r"mov\s+%rsp,%rsi.*and\s+.*%rsp.*mov\s+%rsp,%rdx.*call.*<dispatch_ud>", stub, re.S), "frame ABI")
+print("Invalid opcode ELF audit passed")
+
+check_symbol("ist4_stack", "RW", size=16384, alignment=16)
+trigger = instructions.split("<trigger_ud>:", 1)[1].split("<ud_fault_site>:", 1)[0]
+require(re.findall(r"^\s*[0-9a-f]+:\s+(\w+)", trigger, re.M) == ["mov","sub","call","add"]
+        and "%rsp,%rdi" in trigger and trigger.count("$0x8,%rsp") == 2
+        and "<announce_ud>" in trigger, "unexpected trigger stack manipulation")

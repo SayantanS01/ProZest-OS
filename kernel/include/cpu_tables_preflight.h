@@ -22,4 +22,7 @@ int cpu_tables_preflight_check(
     const struct bootstrap_idt_state *irq
 );
 
+int cpu_tables_active_check(const struct bootstrap_cpu_tables *cpu,
+                            const struct bootstrap_idt_state *irq);
+
 #endif

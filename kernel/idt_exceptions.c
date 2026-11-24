@@ -102,6 +102,9 @@ _Static_assert(
 static uint8_t exception_ist_index(uint16_t vector)
 {
     switch (vector) {
+#ifdef PROZEST_IST4_TEST
+        case 6: return 4;
+#endif
         case 2:
             return TSS_IST_NMI;
 

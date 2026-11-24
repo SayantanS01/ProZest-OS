@@ -65,7 +65,7 @@ CFLAGS=(
 )
 
 SOURCES=(
-    kernel/main.c
+    experiments/v006/main.c
     kernel/graphics.c
     kernel/font.c
     kernel/console.c

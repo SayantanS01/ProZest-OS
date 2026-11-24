@@ -117,7 +117,9 @@ EXCEPTION_NO_ERROR 4
 EXCEPTION_NO_ERROR 5
 
 /* Vector 6: Invalid opcode. */
+#ifndef PROZEST_UD_FRAME_TEST
 EXCEPTION_NO_ERROR 6
+#endif
 
 /* Vector 7: Device not available. */
 EXCEPTION_NO_ERROR 7
@@ -141,7 +143,9 @@ EXCEPTION_WITH_ERROR 12
 EXCEPTION_WITH_ERROR 13
 
 /* Vector 14: Page fault. */
+#ifndef PROZEST_PF_FRAME_TEST
 EXCEPTION_WITH_ERROR 14
+#endif
 
 /* Vector 15: Reserved. */
 EXCEPTION_NO_ERROR 15

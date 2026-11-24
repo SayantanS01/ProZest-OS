@@ -24,6 +24,7 @@ SECTIONS
 
     .text :
     {
+        KEEP(*(.text.kernel_entry))
         *(.text .text.*)
     } :text
 

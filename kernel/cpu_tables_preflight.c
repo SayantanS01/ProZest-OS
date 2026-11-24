@@ -5,6 +5,9 @@
 #include "gdt.h"
 #include "idt.h"
 #include "tss.h"
+#ifdef PROZEST_IST4_TEST
+#include "profile.h"
+#endif
 
 /*
  * Validate canonical 48-bit virtual addresses.
@@ -46,6 +49,9 @@ static uint64_t idt_handler_address(
 
 static uint8_t expected_ist(unsigned int vector)
 {
+#ifdef PROZEST_IST4_TEST
+    if (vector == 6u) return 4;
+#endif
     if (vector == 2u) {
         return TSS_IST_NMI;
     }
@@ -80,9 +86,9 @@ static int separate_stacks(uint64_t a, uint64_t b)
  * Check memory structures before attempting
  * any privileged descriptor installation.
  */
-int cpu_tables_preflight_check(
+static int check_tables(
     const struct bootstrap_cpu_tables *cpu,
-    const struct bootstrap_idt_state *irq
+    const struct bootstrap_idt_state *irq, int active
 )
 {
     if (cpu == NULL || irq == NULL) {
@@ -105,10 +111,11 @@ int cpu_tables_preflight_check(
     }
 
     /* Verify the ring-0 code and data descriptors. */
+    uint64_t accessed = active ? (UINT64_C(1) << 40) : 0;
     if (cpu->gdt.null_descriptor != 0 ||
-        cpu->gdt.kernel_code_descriptor !=
+        (cpu->gdt.kernel_code_descriptor & ~accessed) !=
             GDT_KERNEL_CODE_DESCRIPTOR ||
-        cpu->gdt.kernel_data_descriptor !=
+        (cpu->gdt.kernel_data_descriptor & ~accessed) !=
             GDT_KERNEL_DATA_DESCRIPTOR) {
         return 0;
     }
@@ -117,7 +124,7 @@ int cpu_tables_preflight_check(
     const struct gdt_tss_descriptor *desc =
         &cpu->gdt.tss_descriptor;
 
-    if (desc->access != GDT_TSS_ACCESS ||
+    if (desc->access != (active ? 0x8b : GDT_TSS_ACCESS) ||
         desc->limit_low != sizeof(cpu->tss) - 1u ||
         desc->limit_high_flags != 0 ||
         desc->reserved != 0 ||
@@ -150,6 +157,16 @@ int cpu_tables_preflight_check(
 
     /* Remaining IST slots must be unused. */
     for (unsigned int i = 3; i < TSS_IST_COUNT; i++) {
+#ifdef PROZEST_IST4_TEST
+        if (i == 3) {
+            uint64_t top = cpu->tss.ist[i];
+            if (top != ist4_top() || !valid_bounds((uintptr_t)ist4_stack, top) ||
+                !separate_stacks(top, df) || !separate_stacks(top, nmi) ||
+                !separate_stacks(top, mc))
+                return 0;
+            continue;
+        }
+#endif
         if (cpu->tss.ist[i] != 0) {
             return 0;
         }
@@ -192,4 +209,16 @@ int cpu_tables_preflight_check(
     }
 
     return 1;
+}
+
+int cpu_tables_preflight_check(const struct bootstrap_cpu_tables *cpu,
+                            const struct bootstrap_idt_state *irq)
+{
+    return check_tables(cpu, irq, 0);
+}
+
+int cpu_tables_active_check(const struct bootstrap_cpu_tables *cpu,
+                            const struct bootstrap_idt_state *irq)
+{
+    return check_tables(cpu, irq, 1);
 }
