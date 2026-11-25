@@ -1,0 +1,136 @@
+.text
+.macro IRQ name,vector
+.global \name
+.type \name,@function
+\name:
+    pushq $\vector
+    jmp irq_common
+.size \name,.-\name
+.endm
+IRQ irq_pic0,32
+IRQ irq_pic7,39
+IRQ irq_pic15,47
+IRQ irq_io0,64
+IRQ irq_lapic_timer,65
+IRQ irq_soft,66
+IRQ irq_spurious,255
+.type irq_common,@function
+irq_common:
+    pushq %rax
+    pushq %rbx
+    pushq %rcx
+    pushq %rdx
+    pushq %rbp
+    pushq %rsi
+    pushq %rdi
+    pushq %r8
+    pushq %r9
+    pushq %r10
+    pushq %r11
+    pushq %r12
+    pushq %r13
+    pushq %r14
+    pushq %r15
+    cld
+    movq 120(%rsp),%rdi
+    movq %rsp,%r12
+    andq $-16,%rsp
+    call irq_dispatch
+    movq %r12,%rsp
+    popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+    popq %r11
+    popq %r10
+    popq %r9
+    popq %r8
+    popq %rdi
+    popq %rsi
+    popq %rbp
+    popq %rdx
+    popq %rcx
+    popq %rbx
+    popq %rax
+    addq $8,%rsp
+    iretq
+.size irq_common,.-irq_common
+.global irq_register_probe
+.type irq_register_probe,@function
+irq_register_probe:
+    pushq %rbx
+    pushq %rbp
+    pushq %r12
+    pushq %r13
+    pushq %r14
+    pushq %r15
+    pushq %rsp
+    movq $1,%rax
+    movq $2,%rbx
+    movq $3,%rcx
+    movq $4,%rdx
+    movq $5,%rbp
+    movq $6,%rsi
+    movq $7,%rdi
+    movq $8,%r8
+    movq $9,%r9
+    movq $10,%r10
+    movq $11,%r11
+    movq $12,%r12
+    movq $13,%r13
+    movq $14,%r14
+    movq $15,%r15
+    std
+    int $0x42
+    cmpq $1,%rax
+    jne 1f
+    cmpq $2,%rbx
+    jne 1f
+    cmpq $3,%rcx
+    jne 1f
+    cmpq $4,%rdx
+    jne 1f
+    cmpq $5,%rbp
+    jne 1f
+    cmpq $6,%rsi
+    jne 1f
+    cmpq $7,%rdi
+    jne 1f
+    cmpq $8,%r8
+    jne 1f
+    cmpq $9,%r9
+    jne 1f
+    cmpq $10,%r10
+    jne 1f
+    cmpq $11,%r11
+    jne 1f
+    cmpq $12,%r12
+    jne 1f
+    cmpq $13,%r13
+    jne 1f
+    cmpq $14,%r14
+    jne 1f
+    cmpq $15,%r15
+    jne 1f
+    leaq 8(%rsp),%rax
+    cmpq (%rsp),%rax
+    jne 1f
+    pushfq
+    popq %rax
+    andq $0x600,%rax
+    cmpq $0x400,%rax
+    jne 1f
+    movl $1,%eax
+    jmp 2f
+1:  xorl %eax,%eax
+2:  cld
+    addq $8,%rsp
+    popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+    popq %rbp
+    popq %rbx
+    ret
+.size irq_register_probe,.-irq_register_probe
+.section .note.GNU-stack,"",@progbits
